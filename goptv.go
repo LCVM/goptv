@@ -10,28 +10,27 @@ import (
 	"time"
 )
 
-type Timestamp struct {
-	time.Time
-}
+var UTCDATA = "2006-01-02 15:04:05.999999999 +0000 UTC"
 
-func IntV(message interface{}) int64 {
+func IntV(pointer interface{}) (int64, error) {
 	var buf bytes.Buffer
-	buf = BufV(message)
-	i, err := strconv.ParseInt(buf.String(), 10, 64)
-	if err != nil {
-		panic(err)
-	}
-	return i
+	buf = BufV(pointer)
+	return strconv.ParseInt(buf.String(), 10, 64)
 
 }
-func StringV(message interface{}) string {
+func TimeV(pointer interface{}) (time.Time, error) {
+	ts := strings.Trim(StringV(pointer), "time.Time{")
+	return time.Parse(UTCDATA, strings.Trim(ts, "}"))
+
+}
+func StringV(pointer interface{}) string {
 	var buf bytes.Buffer
-	buf = BufV(message)
+	buf = BufV(pointer)
 	return strings.Trim(buf.String(), "\"")
 
 }
-func BufV(message interface{}) (buf bytes.Buffer) {
-	v := reflect.ValueOf(message)
+func BufV(pointer interface{}) (buf bytes.Buffer) {
+	v := reflect.ValueOf(pointer)
 	pointerValue(&buf, v)
 	return
 
@@ -65,7 +64,7 @@ func pointerValue(w io.Writer, val reflect.Value) {
 		}
 
 		// special handling of Timestamp values
-		if v.Type() == reflect.TypeOf(Timestamp{}) {
+		if v.Type() == reflect.TypeOf(time.Time{}) {
 			fmt.Fprintf(w, "{%s}", v.Interface())
 			return
 		}
